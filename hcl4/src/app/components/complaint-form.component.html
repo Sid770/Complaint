@@ -1,0 +1,129 @@
+<div class="form-container">
+  <div class="form-header">
+    <h1>Register New Complaint</h1>
+    <p>Fill out the form below to submit your complaint</p>
+  </div>
+
+  @if (success()) {
+    <div class="success-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <p>Complaint registered successfully! Redirecting...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>{{ error() }}</p>
+    </div>
+  }
+
+  <form [formGroup]="complaintForm" (ngSubmit)="onSubmit()" class="complaint-form">
+    <div class="form-group">
+      <label for="title">Complaint Title *</label>
+      <input 
+        id="title"
+        type="text" 
+        formControlName="title"
+        placeholder="Brief summary of your complaint"
+        [class.invalid]="isFieldInvalid('title')"
+      />
+      @if (isFieldInvalid('title')) {
+        <span class="error-text">{{ getFieldError('title') }}</span>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description *</label>
+      <textarea 
+        id="description"
+        formControlName="description"
+        rows="5"
+        placeholder="Provide detailed information about your complaint..."
+        [class.invalid]="isFieldInvalid('description')"
+      ></textarea>
+      @if (isFieldInvalid('description')) {
+        <span class="error-text">{{ getFieldError('description') }}</span>
+      }
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="category">Category *</label>
+        <select 
+          id="category"
+          formControlName="category"
+          [class.invalid]="isFieldInvalid('category')"
+        >
+          <option value="">Select a category</option>
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+        @if (isFieldInvalid('category')) {
+          <span class="error-text">{{ getFieldError('category') }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="priority">Priority *</label>
+        <select 
+          id="priority"
+          formControlName="priority"
+          [class.invalid]="isFieldInvalid('priority')"
+        >
+          <option value="">Select priority</option>
+          @for (priority of priorities; track priority) {
+            <option [value]="priority">{{ priority }}</option>
+          }
+        </select>
+        @if (isFieldInvalid('priority')) {
+          <span class="error-text">{{ getFieldError('priority') }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="createdBy">Your Name *</label>
+      <input 
+        id="createdBy"
+        type="text" 
+        formControlName="createdBy"
+        placeholder="Enter your full name"
+        [class.invalid]="isFieldInvalid('createdBy')"
+      />
+      @if (isFieldInvalid('createdBy')) {
+        <span class="error-text">{{ getFieldError('createdBy') }}</span>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button 
+        type="button" 
+        routerLink="/complaints" 
+        class="btn btn-secondary"
+        [disabled]="loading()"
+      >
+        Cancel
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="loading() || success()"
+      >
+        @if (loading()) {
+          <span class="spinner-small"></span>
+          Submitting...
+        } @else {
+          Submit Complaint
+        }
+      </button>
+    </div>
+  </form>
+</div>

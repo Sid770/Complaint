@@ -1,0 +1,105 @@
+<div class="project-container">
+  <div class="header">
+    <h2>Project Management</h2>
+    <button class="btn btn-primary" (click)="openAddForm()">Add New Project</button>
+  </div>
+
+  <div class="filter-section">
+    <select [(ngModel)]="filterStatus" (change)="filterByStatus()" class="form-control">
+      <option value="">All Status</option>
+      <option value="Active">Active</option>
+      <option value="Completed">Completed</option>
+      <option value="OnHold">On Hold</option>
+    </select>
+  </div>
+
+  <div class="info-message" *ngIf="filteredProjects.length === 0">
+    <p>No projects found. Click "Add New Project" to create one.</p>
+  </div>
+
+  <div class="table-container" *ngIf="filteredProjects.length > 0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+          <th>Manager</th>
+          <th>Client</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let project of filteredProjects">
+          <td>{{ project.name }}</td>
+          <td>{{ project.description }}</td>
+          <td>{{ project.startDate | date: 'short' }}</td>
+          <td>{{ project.endDate | date: 'short' }}</td>
+          <td>
+            <span class="badge" 
+                  [class.badge-active]="project.status === 'Active'" 
+                  [class.badge-completed]="project.status === 'Completed'"
+                  [class.badge-onhold]="project.status === 'OnHold'">
+              {{ project.status }}
+            </span>
+          </td>
+          <td>{{ project.managerName }}</td>
+          <td>{{ project.clientName }}</td>
+          <td>
+            <button class="btn btn-sm btn-edit" (click)="openEditForm(project)">Edit</button>
+            <button class="btn btn-sm btn-delete" (click)="deleteProject(project.id!)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal" *ngIf="showForm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ isEditing ? 'Edit Project' : 'Add New Project' }}</h3>
+        <button class="close-btn" (click)="closeForm()">&times;</button>
+      </div>
+      <form (ngSubmit)="saveProject()">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" [(ngModel)]="newProject.name" name="name" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="newProject.description" name="description" required class="form-control" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" [(ngModel)]="newProject.startDate" name="startDate" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" [(ngModel)]="newProject.endDate" name="endDate" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select [(ngModel)]="newProject.status" name="status" required class="form-control">
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="OnHold">On Hold</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Manager Name</label>
+          <input type="text" [(ngModel)]="newProject.managerName" name="managerName" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Client Name</label>
+          <input type="text" [(ngModel)]="newProject.clientName" name="clientName" required class="form-control" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">{{ isEditing ? 'Update' : 'Create' }}</button>
+          <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

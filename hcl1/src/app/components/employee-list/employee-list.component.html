@@ -1,0 +1,110 @@
+<div class="employee-container">
+  <div class="header">
+    <h2>Employee Management</h2>
+    <button class="btn btn-primary" (click)="openAddForm()">Add New Employee</button>
+  </div>
+
+  <div class="filter-section">
+    <input 
+      type="text" 
+      [(ngModel)]="filterDepartment" 
+      placeholder="Filter by department"
+      class="form-control"
+      (input)="filterByDepartment()"
+    />
+  </div>
+
+  <div class="info-message" *ngIf="filteredEmployees.length === 0">
+    <p>No employees found. Click "Add New Employee" to create one.</p>
+  </div>
+
+  <div class="table-container" *ngIf="filteredEmployees.length > 0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Role</th>
+          <th>Joining Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let employee of filteredEmployees">
+          <td>{{ employee.name }}</td>
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.phone }}</td>
+          <td>{{ employee.department }}</td>
+          <td>{{ employee.designation }}</td>
+          <td><span class="badge" [class.badge-admin]="employee.role === 'Admin'" 
+                   [class.badge-manager]="employee.role === 'Manager'"
+                   [class.badge-employee]="employee.role === 'Employee'">{{ employee.role }}</span></td>
+          <td>{{ employee.joiningDate | date: 'short' }}</td>
+          <td><span class="badge" [class.badge-active]="employee.isActive">{{ employee.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td>
+            <button class="btn btn-sm btn-edit" (click)="openEditForm(employee)">Edit</button>
+            <button class="btn btn-sm btn-delete" (click)="deleteEmployee(employee.id!)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal" *ngIf="showForm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ isEditing ? 'Edit Employee' : 'Add New Employee' }}</h3>
+        <button class="close-btn" (click)="closeForm()">&times;</button>
+      </div>
+      <form (ngSubmit)="saveEmployee()">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" [(ngModel)]="newEmployee.name" name="name" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="newEmployee.email" name="email" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" [(ngModel)]="newEmployee.phone" name="phone" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" [(ngModel)]="newEmployee.department" name="department" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" [(ngModel)]="newEmployee.designation" name="designation" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select [(ngModel)]="newEmployee.role" name="role" required class="form-control">
+            <option value="Admin">Admin</option>
+            <option value="Manager">Manager</option>
+            <option value="Employee">Employee</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Joining Date</label>
+          <input type="date" [(ngModel)]="newEmployee.joiningDate" name="joiningDate" required class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select [(ngModel)]="newEmployee.isActive" name="isActive" class="form-control">
+            <option [ngValue]="true">Active</option>
+            <option [ngValue]="false">Inactive</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">{{ isEditing ? 'Update' : 'Create' }}</button>
+          <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

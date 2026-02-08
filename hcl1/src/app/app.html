@@ -1,0 +1,18 @@
+<div class="app-container">
+  <header class="app-header">
+    <h1>{{ title() }}</h1>
+    <nav class="nav-menu">
+      <a routerLink="/employees" routerLinkActive="active" class="nav-link">Employees</a>
+      <a routerLink="/projects" routerLinkActive="active" class="nav-link">Projects</a>
+      <a routerLink="/allocations" routerLinkActive="active" class="nav-link">Allocations</a>
+    </nav>
+  </header>
+  
+  <main class="app-content">
+    <router-outlet></router-outlet>
+  </main>
+  
+  <footer class="app-footer">
+    <p>&copy; 2025 Employee Resource Management System. All rights reserved.</p>
+  </footer>
+</div>

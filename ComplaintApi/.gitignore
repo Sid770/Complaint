@@ -1,0 +1,22 @@
+# Ignore build outputs
+bin/
+obj/
+publish/
+
+# Ignore database files
+*.db
+*.db-shm
+*.db-wal
+
+# Ignore user-specific files
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Ignore NuGet packages
+*.nupkg
+
+# Ignore logs
+logs/
+*.log

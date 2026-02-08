@@ -1,0 +1,139 @@
+<div class="complaint-list-container">
+  <div class="header">
+    <h1>All Complaints</h1>
+    <a routerLink="/new-complaint" class="btn btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      New Complaint
+    </a>
+  </div>
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label for="search">Search</label>
+        <input 
+          id="search"
+          type="text" 
+          [formControl]="searchControl" 
+          placeholder="Search by title or description..."
+          (input)="onFilterChange()"
+          class="form-control"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="category">Category</label>
+        <select 
+          id="category"
+          [formControl]="categoryControl" 
+          (change)="onFilterChange()"
+          class="form-control"
+        >
+          <option value="">All Categories</option>
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="status">Status</label>
+        <select 
+          id="status"
+          [formControl]="statusControl" 
+          (change)="onFilterChange()"
+          class="form-control"
+        >
+          <option value="">All Statuses</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <button type="button" (click)="clearFilters()" class="btn btn-secondary">
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading complaints...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>{{ error() }}</p>
+      <button (click)="loadComplaints()" class="btn btn-primary">Try Again</button>
+    </div>
+  } @else if (filteredComplaints().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="12" y1="18" x2="12" y2="12"></line>
+        <line x1="9" y1="15" x2="15" y2="15"></line>
+      </svg>
+      <h3>No complaints found</h3>
+      <p>Be the first to register a complaint</p>
+      <a routerLink="/new-complaint" class="btn btn-primary">Create Complaint</a>
+    </div>
+  } @else {
+    <div class="complaints-grid">
+      @for (complaint of filteredComplaints(); track complaint.id) {
+        <div class="complaint-card">
+          <div class="complaint-header">
+            <div class="complaint-priority" [class]="getPriorityClass(complaint.priority)">
+              {{ complaint.priority }}
+            </div>
+            <app-status-badge [status]="complaint.status" />
+          </div>
+
+          <h3 class="complaint-title">{{ complaint.title }}</h3>
+          <p class="complaint-description">{{ complaint.description }}</p>
+
+          <div class="complaint-meta">
+            <div class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>{{ complaint.createdBy }}</span>
+            </div>
+            <div class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>{{ complaint.createdAt | date: 'short' }}</span>
+            </div>
+          </div>
+
+          <div class="complaint-footer">
+            <span class="category-badge">{{ complaint.category }}</span>
+            <div class="comment-count">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>{{ complaint.comments.length }}</span>
+            </div>
+            <a [routerLink]="['/complaint', complaint.id]" class="btn btn-link">View Details →</a>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

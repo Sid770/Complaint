@@ -1,0 +1,147 @@
+<div class="detail-container">
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading complaint details...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>{{ error() }}</p>
+      <button routerLink="/complaints" class="btn btn-primary">Back to Complaints</button>
+    </div>
+  } @else if (complaint(); as complaint) {
+    <div class="detail-header">
+      <button routerLink="/complaints" class="btn-back">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back
+      </button>
+      <div class="header-actions">
+        <a [routerLink]="['/admin']" class="btn btn-secondary">Manage Status</a>
+        <button (click)="deleteComplaint()" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="complaint-header">
+        <div class="title-section">
+          <h1>{{ complaint.title }}</h1>
+          <div class="badges">
+            <span class="category-badge">{{ complaint.category }}</span>
+            <span class="complaint-priority" [class]="getPriorityClass(complaint.priority)">
+              {{ complaint.priority }}
+            </span>
+            <app-status-badge [status]="complaint.status" />
+          </div>
+        </div>
+      </div>
+
+      <div class="complaint-meta">
+        <div class="meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <div>
+            <span class="meta-label">Created by</span>
+            <span class="meta-value">{{ complaint.createdBy }}</span>
+          </div>
+        </div>
+        <div class="meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <div>
+            <span class="meta-label">Created</span>
+            <span class="meta-value">{{ complaint.createdAt | date: 'medium' }}</span>
+          </div>
+        </div>
+        <div class="meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <div>
+            <span class="meta-label">Last updated</span>
+            <span class="meta-value">{{ complaint.updatedAt | date: 'medium' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="complaint-body">
+        <h2>Description</h2>
+        <p>{{ complaint.description }}</p>
+      </div>
+    </div>
+
+    <div class="comments-section">
+      <h2>Comment History ({{ complaint.comments.length }})</h2>
+      
+      <div class="add-comment-form">
+        <h3>Add a Comment</h3>
+        <div class="form-group">
+          <input 
+            type="text"
+            [formControl]="commentAuthorControl"
+            placeholder="Your name"
+            class="form-control"
+          />
+        </div>
+        <div class="form-group">
+          <textarea 
+            [formControl]="commentControl"
+            placeholder="Write your comment..."
+            rows="3"
+            class="form-control"
+          ></textarea>
+        </div>
+        <button 
+          (click)="addComment()" 
+          class="btn btn-primary"
+          [disabled]="!commentControl.value || !commentAuthorControl.value || addingComment()"
+        >
+          @if (addingComment()) {
+            <span class="spinner-small"></span>
+            Adding...
+          } @else {
+            Add Comment
+          }
+        </button>
+      </div>
+
+      @if (complaint.comments.length === 0) {
+        <div class="no-comments">
+          <p>No comments yet. Be the first to comment!</p>
+        </div>
+      } @else {
+        <div class="comments-list">
+          @for (comment of complaint.comments; track comment.id) {
+            <div class="comment-card">
+              <div class="comment-header">
+                <div class="comment-author">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>{{ comment.author }}</span>
+                </div>
+                <span class="comment-date">{{ comment.createdAt | date: 'short' }}</span>
+              </div>
+              <p class="comment-text">{{ comment.text }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,157 @@
+<div class="admin-container">
+  <div class="admin-header">
+    <div>
+      <h1>Admin Dashboard</h1>
+      <p>Manage complaint status and monitor progress</p>
+    </div>
+    <a routerLink="/complaints" class="btn btn-secondary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back to Complaints
+    </a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card stat-total">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Total Complaints</p>
+        <p class="stat-value">{{ statistics().total }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card stat-open">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Open</p>
+        <p class="stat-value">{{ statistics().open }}</p>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="getProgressPercentage(statistics().open)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-progress">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">In Progress</p>
+        <p class="stat-value">{{ statistics().inProgress }}</p>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="getProgressPercentage(statistics().inProgress)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-resolved">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Resolved</p>
+        <p class="stat-value">{{ statistics().resolved }}</p>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="getProgressPercentage(statistics().resolved)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading complaints...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>{{ error() }}</p>
+      <button (click)="loadComplaints()" class="btn btn-primary">Try Again</button>
+    </div>
+  } @else if (complaints().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+      </svg>
+      <h3>No complaints to manage</h3>
+      <p>There are currently no complaints in the system</p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <h2>Manage Complaints</h2>
+      <div class="table-wrapper">
+        <table class="complaints-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Priority</th>
+              <th>Created By</th>
+              <th>Created</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (complaint of complaints(); track complaint.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/complaint', complaint.id]" class="complaint-link">
+                    {{ complaint.title }}
+                  </a>
+                </td>
+                <td>
+                  <span class="category-badge">{{ complaint.category }}</span>
+                </td>
+                <td>
+                  <span class="priority-badge" [class]="getPriorityClass(complaint.priority)">
+                    {{ complaint.priority }}
+                  </span>
+                </td>
+                <td>{{ complaint.createdBy }}</td>
+                <td>{{ complaint.createdAt | date: 'short' }}</td>
+                <td>
+                  <app-status-badge [status]="complaint.status" />
+                </td>
+                <td>
+                  <select 
+                    [value]="complaint.status" 
+                    (change)="updateStatus(complaint, $any($event.target).value)"
+                    class="status-select"
+                  >
+                    @for (status of statusOptions; track status) {
+                      <option [value]="status">{{ status }}</option>
+                    }
+                  </select>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
