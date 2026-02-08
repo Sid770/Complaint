@@ -27,24 +27,46 @@ A full-stack complaint management system built with Angular and .NET Web API.
 
 **Backend:**
 - .NET 8.0 Web API
-- Entity Framework Core
-- SQLite Database
+- Azure Data Tables SDK
+- Azure Table Storage (Cloud NoSQL)
+
+**Cloud Infrastructure:**
+- Azure App Service (F1 Free Tier) - Backend
+- Azure Static Web Apps (Free) - Frontend
+- Azure Table Storage (Free) - Database
 
 ## 📋 Prerequisites
 
 - Node.js 20.x or higher
 - .NET 8.0 SDK
 - Git
+- Azure account (for cloud deployment)
+- Azure Storage Emulator (for local development) or Azure Storage Account
 
 ## 🔧 Local Development Setup
 
 ### Backend Setup
 
-```bash
-cd ComplaintApi
-dotnet restore
-dotnet run --urls "http://localhost:5000"
-```
+1. **Install Azure Storage Emulator** (for local testing)
+   - Download and install [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite)
+   - Or use connection string to Azure Storage Account
+
+2. **Update appsettings.json**
+   ```json
+   {
+     "AzureTableStorage": {
+       "ConnectionString": "UseDevelopmentStorage=true",
+       "TableName": "Complaints"
+     }
+   }
+   ```
+
+3. **Run Backend**
+   ```bash
+   cd ComplaintApi
+   dotnet restore
+   dotnet run --urls "http://localhost:5000"
+   ```
 
 ### Frontend Setup
 
@@ -60,34 +82,9 @@ npm start
 
 ## 🐳 Docker Setup
 
-### Using Docker Compose (Recommended)
+> **Note:** Docker support has been removed in favor of Azure-native deployment using Azure App Service and Azure Static Web Apps.
 
-```bash
-# Build and run all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### Manual Docker Build
-
-**Backend:**
-```bash
-cd ComplaintApi
-docker build -t complaint-api .
-docker run -p 5000:8080 complaint-api
-```
-
-**Frontend:**
-```bash
-cd hcl4
-docker build -t complaint-frontend .
-docker run -p 4200:80 complaint-frontend
-```
+For containerized deployment, Azure Container Apps or Azure Container Instances can be configured separately.
 
 ## 🔄 CI/CD Pipeline
 
@@ -99,29 +96,31 @@ Automatically runs on push/PR to main/master/develop:
 - Builds and tests frontend
 - Creates deployment artifacts
 
-#### 2. **Docker Build** (`.github/workflows/docker-build.yml`)
-Builds and pushes Docker images to GitHub Container Registry:
-- Triggered on push to main/master or version tags
-- Creates container images for both services
+#### 2. **Azure Deployment** (`.github/workflows/azure-deployment.yml`)
+Deploys to Azure services on push to main:
+- **Backend**: Azure App Service (F1 Free Tier)
+- **Frontend**: Azure Static Web Apps (Free)
+- **Database**: Azure Table Storage (Free)
 
-#### 3. **Azure Deployment** (`.github/workflows/deploy-azure.yml`)
-Deploys to Azure services (requires configuration):
-- Backend: Azure Web App
-- Frontend: Azure Static Web Apps
+### Setting Up Azure Deployment
 
-### Setting Up CI/CD
+1. **Create Azure Resources:**
+   - Azure App Service (F1 Free) for backend
+   - Azure Static Web Apps for frontend
+   - Azure Storage Account for Table Storage
 
-1. **Enable GitHub Actions:**
-   - Push code to your repository
-   - GitHub Actions will automatically run
+2. **Configure GitHub Secrets:**
+   Go to Settings → Secrets and variables → Actions, add:
+   - `AZURE_WEBAPP_PUBLISH_PROFILE` - Download from Azure App Service
+   - `AZURE_STATIC_WEB_APPS_API_TOKEN` - Get from Azure Static Web Apps
+   - `AZURE_STORAGE_CONNECTION_STRING` - From Azure Storage Account
 
-2. **Configure Secrets (for deployment):**
-   Go to Settings → Secrets and variables → Actions, and add:
-   - `AZURE_BACKEND_PUBLISH_PROFILE` - Backend publish profile
-   - `AZURE_STATIC_WEB_APPS_API_TOKEN` - Frontend deployment token
+3. **Update Workflow:**
+   - Edit `.github/workflows/azure-deployment.yml`
+   - Update `AZURE_WEBAPP_NAME` with your App Service name
 
-3. **Docker Registry Access:**
-   - Automatic for GitHub Container Registry (uses GITHUB_TOKEN)
+4. **Push to GitHub:**
+   - Pipeline will automatically deploy to Azure
 
 ## 📁 Project Structure
 
@@ -131,9 +130,9 @@ Deploys to Azure services (requires configuration):
 │   └── workflows/           # GitHub Actions CI/CD pipelines
 ├── ComplaintApi/            # .NET Backend
 │   ├── Controllers/         # API endpoints
-│   ├── Data/               # Database context
+│   ├── Services/           # Azure Table Storage service
 │   ├── Models/             # Data models
-│   ├── Dockerfile          # Backend container config
+│   ├── appsettings.json    # Configuration
 │   └── Program.cs          # App configuration
 ├── hcl4/                   # Angular Frontend
 │   ├── src/
@@ -141,9 +140,8 @@ Deploys to Azure services (requires configuration):
 │   │       ├── components/ # UI components
 │   │       ├── models/     # TypeScript interfaces
 │   │       └── services/   # API services
-│   ├── Dockerfile          # Frontend container config
-│   └── nginx.conf          # Nginx configuration
-└── docker-compose.yml      # Multi-container orchestration
+│   └── angular.json        # Angular config
+└── README.md
 ```
 
 ## 🔌 API Endpoints
@@ -164,18 +162,17 @@ Deploys to Azure services (requires configuration):
 
 ## 🚢 Deployment Options
 
-### Option 1: Docker Compose
+### Option 1: Azure (Recommended - Free Tier)
 ```bash
-docker-compose up -d
+# Automated via GitHub Actions
+# Just push to main branch
+git push origin main
 ```
 
-### Option 2: Manual Deployment
-Deploy backend and frontend separately to your hosting provider
+### Option 2: Manual Azure Deployment
+Follow the detailed guide in [DEPLOYMENT.md](DEPLOYMENT.md)
 
-### Option 3: Azure
-Use the provided Azure deployment workflow
-
-### Option 4: AWS/GCP
+### Option 3: AWS/GCP
 Modify the deployment workflow for your cloud provider
 
 ## 🧪 Testing
@@ -194,11 +191,12 @@ npm test
 
 ## 📝 Environment Variables
 
-**Backend (`appsettings.json` or Environment):**
+**Backend (`appsettings.json` or Azure Configuration):**
 ```json
 {
-  "ConnectionStrings": {
-    "DefaultConnection": "Data Source=complaints.db"
+  "AzureTableStorage": {
+    "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=YOUR_ACCOUNT;AccountKey=YOUR_KEY;EndpointSuffix=core.windows.net",
+    "TableName": "Complaints"
   }
 }
 ```
@@ -210,6 +208,10 @@ export const environment = {
   apiUrl: 'http://localhost:5000'
 };
 ```
+
+**For Azure Production:**
+- Backend: Set `AzureTableStorage:ConnectionString` in App Service Configuration
+- Frontend: Update `apiUrl` to your Azure App Service URL
 
 ## 🤝 Contributing
 

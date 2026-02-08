@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ComplaintApi.Models;
-using ComplaintApi.Data;
+using ComplaintApi.Services;
+using System.Text.Json;
 
 namespace ComplaintApi.Controllers;
 
@@ -9,122 +9,109 @@ namespace ComplaintApi.Controllers;
 [Route("api/complaints")]
 public class ComplaintsController : ControllerBase
 {
-    private readonly ComplaintDbContext _context;
+    private readonly TableStorageService _tableService;
 
-    public ComplaintsController(ComplaintDbContext context)
+    public ComplaintsController(TableStorageService tableService)
     {
-        _context = context;
+        _tableService = tableService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAllComplaints([FromQuery] string? category, [FromQuery] string? status, [FromQuery] string? search)
     {
-        var query = _context.Complaints.Include(c => c.Comments).AsQueryable();
-
-        if (!string.IsNullOrEmpty(category))
+        var complaints = await _tableService.GetAllComplaintsAsync(category, status, search);
+        
+        // Convert complaints to response format with parsed comments
+        var response = complaints.Select(c => new
         {
-            query = query.Where(c => c.Category == category);
-        }
+            c.Id,
+            c.Title,
+            c.Description,
+            c.Category,
+            c.Priority,
+            c.Status,
+            c.CreatedAt,
+            c.UpdatedAt,
+            c.CreatedBy,
+            Comments = JsonSerializer.Deserialize<List<CommentEntity>>(c.Comments) ?? new List<CommentEntity>()
+        });
 
-        if (!string.IsNullOrEmpty(status))
-        {
-            query = query.Where(c => c.Status == status);
-        }
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(c => 
-                c.Title.Contains(search) ||
-                c.Description.Contains(search));
-        }
-
-        var result = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
-        return Ok(result);
+        return Ok(response);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetComplaint(string id)
     {
-        var complaint = await _context.Complaints
-            .Include(c => c.Comments)
-            .FirstOrDefaultAsync(c => c.Id == id);
+        var complaint = await _tableService.GetComplaintByIdAsync(id);
             
         if (complaint == null)
         {
             return NotFound(new { message = "Complaint not found" });
         }
-        return Ok(complaint);
+
+        var response = new
+        {
+            complaint.Id,
+            complaint.Title,
+            complaint.Description,
+            complaint.Category,
+            complaint.Priority,
+            complaint.Status,
+            complaint.CreatedAt,
+            complaint.UpdatedAt,
+            complaint.CreatedBy,
+            Comments = JsonSerializer.Deserialize<List<CommentEntity>>(complaint.Comments) ?? new List<CommentEntity>()
+        };
+
+        return Ok(response);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateComplaint([FromBody] ComplaintEntity complaint)
     {
-        complaint.Id = Guid.NewGuid().ToString();
-        complaint.Status = "Open";
-        complaint.CreatedAt = DateTime.UtcNow;
-        complaint.UpdatedAt = DateTime.UtcNow;
-        complaint.Comments = new List<CommentEntity>();
-        
-        _context.Complaints.Add(complaint);
-        await _context.SaveChangesAsync();
-        
-        return CreatedAtAction(nameof(GetComplaint), new { id = complaint.Id }, complaint);
+        var created = await _tableService.CreateComplaintAsync(complaint);
+        return CreatedAtAction(nameof(GetComplaint), new { id = created.Id }, created);
     }
 
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] StatusUpdateRequest request)
     {
-        var complaint = await _context.Complaints.FindAsync(id);
+        var complaint = await _tableService.UpdateComplaintStatusAsync(id, request.Status);
         if (complaint == null)
         {
             return NotFound(new { message = "Complaint not found" });
         }
 
-        complaint.Status = request.Status;
-        complaint.UpdatedAt = DateTime.UtcNow;
-        
-        await _context.SaveChangesAsync();
         return Ok(complaint);
     }
 
     [HttpPost("{id}/comments")]
     public async Task<IActionResult> AddComment(string id, [FromBody] CommentRequest request)
     {
-        var complaint = await _context.Complaints
-            .Include(c => c.Comments)
-            .FirstOrDefaultAsync(c => c.Id == id);
-            
-        if (complaint == null)
+        var comment = new CommentEntity
+        {
+            Text = request.Text,
+            Author = request.Author
+        };
+
+        var addedComment = await _tableService.AddCommentAsync(id, comment);
+        if (addedComment == null)
         {
             return NotFound(new { message = "Complaint not found" });
         }
 
-        var comment = new CommentEntity
-        {
-            Id = Guid.NewGuid().ToString(),
-            Text = request.Text,
-            Author = request.Author,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        complaint.Comments.Add(comment);
-        complaint.UpdatedAt = DateTime.UtcNow;
-        
-        await _context.SaveChangesAsync();
-        return Ok(comment);
+        return Ok(addedComment);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteComplaint(string id)
     {
-        var complaint = await _context.Complaints.FindAsync(id);
-        if (complaint == null)
+        var deleted = await _tableService.DeleteComplaintAsync(id);
+        if (!deleted)
         {
             return NotFound(new { message = "Complaint not found" });
         }
 
-        _context.Complaints.Remove(complaint);
-        await _context.SaveChangesAsync();
         return NoContent();
     }
 }
